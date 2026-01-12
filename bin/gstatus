@@ -1,0 +1,11 @@
+#!/bin/bash
+echo "--- Gemini OS Core Status ---"
+echo -n "API (Port 5000): "
+curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/deploy && echo " ✅ OK" || echo " ❌ DOWN"
+echo -n "TX Engine:       "
+[ -f ~/bin/tx ] && echo " ✅ OK (v8)" || echo " ❌ MISSING"
+echo -n "GPG Keys:        "
+gpg --list-keys | grep -q "Gemini OS" && echo " ✅ OK" || echo " ❌ MISSING"
+echo -n "Git Backup:      "
+[ -d ~/.git ] && echo " ✅ OK" || echo " ❌ NOT INITIALIZED"
+echo "-----------------------------"

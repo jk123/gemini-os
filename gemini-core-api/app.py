@@ -5,20 +5,20 @@ import os
 app = Flask(__name__)
 
 @app.route('/deploy', methods=['POST'])
-def deploy_txtar():
+def deploy():
     txtar_content = request.data.decode('utf-8')
     home_dir = os.path.expanduser('~')
+    tx_path = os.path.join(home_dir, 'bin/tx')
     
     if not txtar_content:
-        return jsonify({"error": "Empty content"}), 400
+        return jsonify({"status": "error", "message": "Empty content"}), 400
     
     try:
-        # Suoritetaan tx-komento kotihakemistossa
         process = subprocess.Popen(
-            ['/home/ubuntu/bin/tx'], 
-            stdin=subprocess.PIPE, 
-            stdout=subprocess.PIPE, 
-            stderr=subprocess.PIPE, 
+            [tx_path],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
             cwd=home_dir
         )
@@ -26,11 +26,11 @@ def deploy_txtar():
         
         return jsonify({
             "status": "success",
-            "log": stdout,
-            "error_log": stderr
+            "output": stdout.strip(),
+            "errors": stderr.strip()
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

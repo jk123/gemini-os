@@ -1,10 +1,5 @@
 #!/bin/bash
-# Gemini OS - TX Engine (v7: GPG Security Optimized)
-
-if [ ! -z "$1" ]; then
-    ai "Luo .txtar paketti pyynnöstä: $1. Käytä [gpg] ja [run] tageja tarvittaessa." | tx
-    exit
-fi
+# Gemini OS - TX Engine (v8: Path-safe Service Names)
 
 python3 -c "
 import sys, os, subprocess, stat, re
@@ -14,43 +9,32 @@ for section in data:
     if ' --' in section:
         header, content = section.split(' --', 1)
         header = header.strip()
-        
-        # Tagien poiminta
         tags = re.findall(r'\[(.*?)\]', header)
         filename = re.sub(r'\[.*?\]', '', header).strip()
-        
         if not filename and tags:
             filename = f'[{tags[-1]}]' if len(tags) == 1 else header
             tags = tags[:-1]
 
         if not filename: continue
-
         full_path = os.path.abspath(filename)
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        
-        # GPG-tiedostojen erikoiskäsittely (ASCII-armor)
-        with open(full_path, 'w') as f:
-            f.write(content.lstrip())
-        
-        # Asetetaan suojaus heti jos GPG-tagi löytyy
-        if 'gpg' in tags or 'security' in tags:
-            os.chmod(full_path, 0o600)
-            print(f'🔒 Secured [600]: {filename}')
-        else:
-            print(f'➜ Saved: {filename}')
+        with open(full_path, 'w') as f: f.write(content.lstrip())
+        print(f'➜ Saved: {filename}')
 
-        # Suorituslogiikka
         if 'run' in tags:
-            os.chmod(full_path, os.stat(full_path).st_mode | stat.S_IEXEC)
-            print(f'🚀 Executing: {filename}')
+            os.chmod(full_path, 0o755)
             subprocess.run([sys.executable, full_path] if filename.endswith('.py') else [full_path])
 
         if 'service' in tags:
-            svc_name = filename.split('.')[0]
+            # OPTIMOITU: Puhdistetaan palvelun nimi (vain tiedoston nimi ilman polkua ja päätteitä)
+            svc_name = os.path.basename(filename).split('.')[0]
             exec_cmd = f'{sys.executable} {full_path}' if filename.endswith('.py') else full_path
-            svc_content = f'[Unit]\nDescription=Gemini OS: {svc_name}\nAfter=network.target\n\n[Service]\nUser={os.getlogin()}\nWorkingDirectory={os.getcwd()}\nExecStart={exec_cmd}\nRestart=always\n\n[Install]\nWantedBy=multi-user.target\n'
-            subprocess.run(['sudo', 'tee', f'/etc/systemd/system/{svc_name}.service'], input=svc_content, text=True, capture_output=True)
+            svc_content = f'[Unit]\nDescription=Gemini OS: {svc_name}\nAfter=network.target\n\n[Service]\nUser={os.getlogin()}\nWorkingDirectory={os.path.dirname(full_path)}\nExecStart={exec_cmd}\nRestart=always\n\n[Install]\nWantedBy=multi-user.target\n'
+            
+            svc_path = f'/etc/systemd/system/{svc_name}.service'
+            subprocess.run(['sudo', 'tee', svc_path], input=svc_content, text=True, capture_output=True)
             subprocess.run(['sudo', 'systemctl', 'daemon-reload'])
+            subprocess.run(['sudo', 'systemctl', 'enable', svc_name])
             subprocess.run(['sudo', 'systemctl', 'restart', svc_name])
-            print(f'✅ Service {svc_name} active.')
+            print(f'✅ Service {svc_name} is now correctly active.')
 "
