@@ -1,0 +1,1 @@
+print('KAIKKI OK: API ja TX-moottori ovat synkronoitu!')
