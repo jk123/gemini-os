@@ -1,18 +1,18 @@
 #!/bin/bash
+# Gemini OS - Global Backup Service
 cd ~/gemini-os || exit
 
-# Lisätään kaikki muutokset (myös uudet tiedostot)
+# Copy current engine and core files to repo
 cp -r ~/bin .
-cp -r ~/gemini-api .
+cp -r ~/gemini-core-api .
+
 git add .
 
-# Tehdään commit vain jos on muutoksia
+# Commit only if changes exist
 if ! git diff-index --quiet HEAD --; then
-    git commit -m "Gemini OS Backup $(date +'%Y-%m-%d %H:%M')"
+    git commit -m "Gemini OS: Infrastructure update $(date +'%Y-%m-%d %H:%M')"
 fi
 
-# Selvitetään nykyinen haara (master tai main)
+# Detect branch and push
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
-
-# Puskettaan oikeaan haaraan
 git push origin "$BRANCH"

@@ -1,0 +1,1 @@
+Tämä tiedosto luotiin REST API:n kautta käyttäen Gemini 2.0 -arkkitehtuuria.

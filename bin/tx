@@ -1,7 +1,58 @@
 #!/bin/bash
-# Gemini OS - TXTAR Python Wrapper
+# Gemini OS - TXTAR (Vakaa: [tag: tiedosto])
+
 if [ -t 0 ] && [ "$#" -eq 0 ]; then
-    echo "Gemini OS: Odottelen .txtar-syötettä (paina CTRL+d lopettaaksesi)..."
+    echo "Syötä koodi (esim. [run: skripti.py]) ja paina CTRL+d:"
 fi
 
-python3 ~/bin/pytxtar.py "$@"
+python3 -c "
+import sys, os, subprocess, stat
+
+data = sys.stdin.read().split('-- ')
+for section in data:
+    if ' --' in section:
+        header, content = section.split(' --', 1)
+        header = header.strip()
+        
+        tag = None
+        filename = header
+        
+        # Tunnistetaan [tag: tiedosto]
+        if header.startswith('[') and ':' in header:
+            try:
+                tag_part = header[1:header.find(']')]
+                tag, filename = [x.strip() for x in tag_part.split(':', 1)]
+            except:
+                pass
+
+        if not filename: continue
+
+        # Luodaan tiedosto
+        os.makedirs(os.path.dirname(filename) or '.', exist_ok=True)
+        with open(filename, 'w') as f:
+            f.write(content.lstrip())
+        
+        print(f'➜ Tallennettu: {filename}')
+
+        # Käsitellään tagit
+        if tag == 'run':
+            # Asetetaan suoritusoikeudet (chmod +x)
+            st = os.stat(filename)
+            os.chmod(filename, st.st_mode | stat.S_IEXEC)
+            
+            print(f'🚀 Suoritetaan [run]: {filename}')
+            try:
+                # Suoritetaan tiedostotyypin mukaan
+                if filename.endswith('.py'):
+                    subprocess.run([sys.executable, filename], check=True)
+                else:
+                    # Käytetään täyttä polkua suoritukseen
+                    full_path = os.path.abspath(filename)
+                    subprocess.run([full_path], check=True)
+            except Exception as e:
+                print(f'❌ Virhe suorituksessa: {e}')
+        
+        elif tag in ['security', 'ACL', 'gpg']:
+            os.chmod(filename, 0o600)
+            print(f'🔒 Suojattu [{tag}]: {filename}')
+"
