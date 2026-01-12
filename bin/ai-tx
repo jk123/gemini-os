@@ -1,0 +1,23 @@
+#!/bin/bash
+# Gemini OS - Autonomous Self-Healer
+
+PROMPT=$1
+SYSTEM_MSG="Luo .txtar paketti. Käytä [run], [service] tai [cron] tageja."
+
+echo "🤖 Vaihe 1: Generoidaan ja asennetaan..."
+RESPONSE=$(ai "$SYSTEM_MSG Tehtävä: $PROMPT")
+echo "$RESPONSE" | tx > /tmp/tx_result.log 2>&1
+cat /tmp/tx_result.log
+
+# Tarkistetaan epäonnistuiko ajo
+if grep -q "❌ Error" /tmp/tx_result.log; then
+    ERROR_MSG=$(cat /tmp/tx_result.log)
+    echo "⚠️ Virhe havaittu! Yritetään autonomista korjausta..."
+    
+    # Pyydetään AI:lta korjattu versio virheen perusteella
+    FIX_PROMPT="Edellinen koodi epäonnistui tällä virheellä: $ERROR_MSG. Luo korjattu .txtar paketti."
+    ai "$FIX_PROMPT" | tx
+    echo "✅ Korjausyritys suoritettu."
+else
+    echo "✅ Tehtävä suoritettu onnistuneesti."
+fi

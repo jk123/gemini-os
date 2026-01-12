@@ -1,12 +1,13 @@
 #!/bin/bash
-# Gemini OS - TXTAR (Vakaa: [tag: tiedosto])
+# Gemini OS - TX Engine (v7: GPG Security Optimized)
 
-if [ -t 0 ] && [ "$#" -eq 0 ]; then
-    echo "Syötä koodi (esim. [run: skripti.py]) ja paina CTRL+d:"
+if [ ! -z "$1" ]; then
+    ai "Luo .txtar paketti pyynnöstä: $1. Käytä [gpg] ja [run] tageja tarvittaessa." | tx
+    exit
 fi
 
 python3 -c "
-import sys, os, subprocess, stat
+import sys, os, subprocess, stat, re
 
 data = sys.stdin.read().split('-- ')
 for section in data:
@@ -14,45 +15,42 @@ for section in data:
         header, content = section.split(' --', 1)
         header = header.strip()
         
-        tag = None
-        filename = header
+        # Tagien poiminta
+        tags = re.findall(r'\[(.*?)\]', header)
+        filename = re.sub(r'\[.*?\]', '', header).strip()
         
-        # Tunnistetaan [tag: tiedosto]
-        if header.startswith('[') and ':' in header:
-            try:
-                tag_part = header[1:header.find(']')]
-                tag, filename = [x.strip() for x in tag_part.split(':', 1)]
-            except:
-                pass
+        if not filename and tags:
+            filename = f'[{tags[-1]}]' if len(tags) == 1 else header
+            tags = tags[:-1]
 
         if not filename: continue
 
-        # Luodaan tiedosto
-        os.makedirs(os.path.dirname(filename) or '.', exist_ok=True)
-        with open(filename, 'w') as f:
+        full_path = os.path.abspath(filename)
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        
+        # GPG-tiedostojen erikoiskäsittely (ASCII-armor)
+        with open(full_path, 'w') as f:
             f.write(content.lstrip())
         
-        print(f'➜ Tallennettu: {filename}')
+        # Asetetaan suojaus heti jos GPG-tagi löytyy
+        if 'gpg' in tags or 'security' in tags:
+            os.chmod(full_path, 0o600)
+            print(f'🔒 Secured [600]: {filename}')
+        else:
+            print(f'➜ Saved: {filename}')
 
-        # Käsitellään tagit
-        if tag == 'run':
-            # Asetetaan suoritusoikeudet (chmod +x)
-            st = os.stat(filename)
-            os.chmod(filename, st.st_mode | stat.S_IEXEC)
-            
-            print(f'🚀 Suoritetaan [run]: {filename}')
-            try:
-                # Suoritetaan tiedostotyypin mukaan
-                if filename.endswith('.py'):
-                    subprocess.run([sys.executable, filename], check=True)
-                else:
-                    # Käytetään täyttä polkua suoritukseen
-                    full_path = os.path.abspath(filename)
-                    subprocess.run([full_path], check=True)
-            except Exception as e:
-                print(f'❌ Virhe suorituksessa: {e}')
-        
-        elif tag in ['security', 'ACL', 'gpg']:
-            os.chmod(filename, 0o600)
-            print(f'🔒 Suojattu [{tag}]: {filename}')
+        # Suorituslogiikka
+        if 'run' in tags:
+            os.chmod(full_path, os.stat(full_path).st_mode | stat.S_IEXEC)
+            print(f'🚀 Executing: {filename}')
+            subprocess.run([sys.executable, full_path] if filename.endswith('.py') else [full_path])
+
+        if 'service' in tags:
+            svc_name = filename.split('.')[0]
+            exec_cmd = f'{sys.executable} {full_path}' if filename.endswith('.py') else full_path
+            svc_content = f'[Unit]\nDescription=Gemini OS: {svc_name}\nAfter=network.target\n\n[Service]\nUser={os.getlogin()}\nWorkingDirectory={os.getcwd()}\nExecStart={exec_cmd}\nRestart=always\n\n[Install]\nWantedBy=multi-user.target\n'
+            subprocess.run(['sudo', 'tee', f'/etc/systemd/system/{svc_name}.service'], input=svc_content, text=True, capture_output=True)
+            subprocess.run(['sudo', 'systemctl', 'daemon-reload'])
+            subprocess.run(['sudo', 'systemctl', 'restart', svc_name])
+            print(f'✅ Service {svc_name} active.')
 "

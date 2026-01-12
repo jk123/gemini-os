@@ -1,0 +1,17 @@
+# Gemini OS Core
+
+Advanced AI-integrated Linux administration framework.
+
+## Architecture
+- **Core API**: Flask-based REST interface (port 5000) for remote deployment.
+- **TX Engine**: Python-powered Txtar parser with `[tag: filename]` support.
+- **AI Integration**: Native Gemini 2.0+ support with extreme stability settings.
+- **Backup**: Automated Git synchronization via `abackup`.
+
+## Usage
+- Use `tx` to deploy multi-file packages from stdin.
+- Supported tags: `run`, `security`, `ACL`.
+- Service management: `sudo systemctl status gemini-core`.
+
+---
+*Status: Production Ready*
