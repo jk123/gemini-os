@@ -1,0 +1,14 @@
+#!/bin/bash
+# Gemini OS - GPG-Signed Chat Command Interface
+
+CODE=$1
+[ -z "$CODE" ] && echo "Käyttö: gcommand \"print('hello')\"" && exit 1
+
+KEY_ID=$(gpg --list-keys --with-colons | grep "^pub" | cut -d: -f5 | head -n 1)
+PAYLOAD=$(printf -- "-- [run]remote_cmd.py --\n$CODE\n")
+
+# Allekirjoitetaan paketti
+echo "$PAYLOAD" | gpg --clearsign --local-user "$KEY_ID" -a | \
+curl -s -X POST http://localhost:5000/deploy \
+    -H "Content-Type: text/plain" \
+    --data-binary @- | python3 -m json.tool
