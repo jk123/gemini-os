@@ -1,0 +1,1 @@
+Etähallinta testi suoritettu onnistuneesti chatista.

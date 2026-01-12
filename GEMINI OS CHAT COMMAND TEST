@@ -1,0 +1,1 @@
+-"); import os; print(f"Kone: {os.uname().nodename}"); print(f"Uptime: {os.popen("uptime -p").read().strip()}")

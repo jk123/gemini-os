@@ -1,0 +1,24 @@
+#!/bin/bash
+if [ -z "$GOOGLE_API_KEY" ]; then
+    echo "Virhe: GOOGLE_API_KEY puuttuu."
+    exit 1
+fi
+
+PROMPT=$(echo "$*" | sed 's/"/\\"/g')
+
+# Käytetään uusinta 2.0 Flash -mallia (tämä on "parempi" kuin 1.5)
+RESPONSE=$(curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_API_KEY}" \
+    -H 'Content-Type: application/json' \
+    -d "{
+      \"contents\": [{ \"parts\":[{ \"text\": \"${PROMPT}\" }]}],
+      \"generationConfig\": {
+        \"temperature\": 0.1
+      }
+    }")
+
+if echo "$RESPONSE" | jq -e '.candidates[0].content.parts[0].text' > /dev/null 2>&1; then
+    echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text'
+else
+    echo "--- API VASTAUS (DEBUG) ---"
+    echo "$RESPONSE" | jq .
+fi

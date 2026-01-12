@@ -1,0 +1,18 @@
+#!/bin/bash
+# Gemini OS - Global Backup Service
+cd ~/gemini-os || exit
+
+# Copy current engine and core files to repo
+cp -r ~/bin .
+cp -r ~/gemini-core-api .
+
+git add .
+
+# Commit only if changes exist
+if ! git diff-index --quiet HEAD --; then
+    git commit -m "Gemini OS: Infrastructure update $(date +'%Y-%m-%d %H:%M')"
+fi
+
+# Detect branch and push
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+git push origin "$BRANCH"

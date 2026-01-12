@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+import sys, os, subprocess, json
+from rich.console import Console
+from rich.panel import Panel
+
+console = Console()
+
+def run():
+    # Näytetään hieno otsikko
+    console.print(Panel("[bold cyan]Gemini OS - Chatbox v2.3[/bold cyan]", border_style="blue"))
+    
+    # Jos kutsutaan suoraan (ilman putkea), kerrotaan että odotetaan syötettä
+    if sys.stdin.isatty():
+        console.print("[yellow]Odotetaan koodia... (Liitä koodi ja paina Ctrl+D lopettaaksesi)[/yellow]")
+
+    try:
+        # sys.stdin.read() lukee kaiken kunnes tulee EOF (Ctrl+D)
+        code = sys.stdin.read().strip()
+        if not code:
+            console.print("[red]Ei koodia syötetty.[/red]")
+            return
+        
+        # GPG-allekirjoitus ja lähetys (Pääfokus)
+        key_id = subprocess.getoutput("gpg --list-keys --with-colons | grep '^pub' | cut -d: -f5 | head -n 1")
+        payload = f"-- [run]chatbox_cmd.py --\n{code}\n"
+        
+        gpg_process = subprocess.Popen(['gpg', '--clearsign', '--local-user', key_id, '-a'], 
+                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+        signed_payload, _ = gpg_process.communicate(input=payload)
+
+        res = subprocess.run(['curl', '-s', '-X', 'POST', 'http://localhost:5000/deploy', 
+                            '-H', 'Content-Type: text/plain', '--data-binary', '@-'],
+                           input=signed_payload, text=True, capture_output=True)
+        
+        data = json.loads(res.stdout)
+        console.print(Panel(data.get("output", ""), title="[bold green]Gnode Vastaus[/bold green]", border_style="green"))
+        if data.get("errors"):
+            console.print(Panel(data["errors"], title="[bold red]Virheet[/bold red]", border_style="red"))
+            
+    except Exception as e:
+        console.print(f"[red]Virhe: {e}[/red]")
+
+if __name__ == "__main__":
+    run()

@@ -1,0 +1,11 @@
+#!/bin/bash
+# Gemini OS - Export Public GPG Key
+KEY_ID=$(gpg --list-keys --with-colons | grep "^pub" | cut -d: -f5 | head -n 1)
+
+if [ -z "$KEY_ID" ]; then
+    echo "❌ Virhe: GPG-avainta ei löytynyt."
+    exit 1
+fi
+
+echo "🔐 Gemini OS Public Key ($KEY_ID):"
+gpg --armor --export "$KEY_ID"

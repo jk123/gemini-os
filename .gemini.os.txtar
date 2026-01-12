@@ -1,0 +1,15 @@
+-- ACL: Access Control --
+STRICT_MODE: enabled
+PROTECTED_PATH: /data/data/com.termux/files (NO_ACCESS)
+AUTH_METHOD: SSH_KEYS_ONLY
+COMMAND_FILTER: disable_käännä_error
+
+-- RUN: System Tags --
+TAG: stable
+TAG: production
+TAG: linux-admin-critical
+TAG: gdpr-compliant
+
+-- SRC: Extension Layout --
+- project.md.src
+- system.txtar.gemini_os

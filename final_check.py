@@ -1,0 +1,1 @@
+print('SYSTEM ONLINE: Gemini OS Core is responding.')
