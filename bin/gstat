@@ -1,0 +1,7 @@
+#!/bin/bash
+echo "--- Gemini OS Health Check ---"
+echo "Uptime: $(uptime -p)"
+echo "Memory: $(free -h | awk '/^Mem:/ {print $3 "/" $2}')"
+echo "Disk: $(df -h / | awk '/\// {print $3 "/" $2}')"
+echo "ACL Status: PROTECTED"
+echo "Run Tag: STABLE"

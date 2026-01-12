@@ -1,0 +1,7 @@
+#!/bin/bash
+# Gemini OS - TXTAR Python Wrapper
+if [ -t 0 ] && [ "$#" -eq 0 ]; then
+    echo "Gemini OS: Odottelen .txtar-syötettä (paina CTRL+d lopettaaksesi)..."
+fi
+
+python3 ~/bin/pytxtar.py "$@"
