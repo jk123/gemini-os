@@ -1,0 +1,15 @@
+-"
+    tail -n 15 $LOG_FILE
+    echo "--- palvelimen tila ---"
+    sudo systemctl status gnode-webui --no-pager
+    ;;
+  report)
+    echo "--- tietoturvaraportti ---"
+    sudo ausearch -k webui_lock_alert -i 2>/dev/null | grep -E "type=SYSCALL|uid=" | tail -n 10
+    ;;
+  *)
+    echo "Käyttö: gnode [lock|unlock|logs|report]"
+    ;;
+esac
+EOF
+sudo chmod +x /usr/local/bin/gnode
